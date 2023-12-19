@@ -1,18 +1,17 @@
 use std::fs::read_to_string;
 
-pub fn solve_day_0() -> i32 {
+pub fn solve_day() -> i128 {
     let input = read_to_string("../input0.txt").unwrap();
-    solve1(&input) as i32
+    solve(&input)
 }
 
-fn solve(input: &str) -> i64 {
+fn solve(_input: &str) -> i128 {
     1
 }
 
-fn solve2(input: &str) -> i64 {
+fn solve2(_input: &str) -> i128 {
     0
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -21,18 +20,19 @@ mod tests {
     #[test]
     fn test_solve() {
         let test_input = get_test_input();
-        assert_eq!(solve(test_input), -1);
+        assert_eq!(solve(test_input), 100);
     }
 
+    #[ignore]
     #[test]
     fn test_solve2() {
         let test_input = get_test_input();
-        assert_eq!(solve2(test_input), -2);
+        assert_eq!(solve2(test_input), 200);
     }
 
     fn get_test_input() -> &'static str {
         let test_input = "\
-test_input 1 2 3";
+TEST_INPUT";
         test_input
     }
 }

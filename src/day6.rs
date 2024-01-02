@@ -38,9 +38,9 @@ impl Race {
 fn solve(input: &str) -> i64 {
     // parse input
     let mut lines = input.lines();
-    let timeline = lines.next().unwrap().trim().split_whitespace().skip(1)
+    let timeline = lines.next().unwrap().split_whitespace().skip(1)
         .map(|c| c.parse::<i64>().unwrap());
-    let distances = lines.next().unwrap().trim().split_whitespace().skip(1)
+    let distances = lines.next().unwrap().split_whitespace().skip(1)
         .map(|c| c.parse::<i64>().unwrap());
     let racebuilder = timeline.zip(distances);
     let races = racebuilder.map(Race::new).collect::<Vec<_>>();

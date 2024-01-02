@@ -33,7 +33,7 @@ fn solve2(input: &str) -> u128 {
     lines.next();
     let nodes = get_nodes_map(lines);
     let mut currents: Vec<&str> = 
-        nodes.keys().filter(|&key| key.chars().last() == Some('A')).map(|&key| key).collect();
+        nodes.keys().filter(|&key| key.ends_with('A')).map(|&key| key).collect();
     let mut counts: Vec<u128> = vec![0; currents.len()];
     for i in 0..currents.len() {
         let mut inst = instructions.iter().cycle();
@@ -55,7 +55,7 @@ fn solve2(input: &str) -> u128 {
         Factorization::run(n).factors.iter().for_each(|&n| {factorset.insert(n);});
     }
     dbg!(&factorset);
-    let steps = factorset.iter().fold(1, |a, b| a * b);
+    let steps = factorset.iter().product();
     steps
 }
 /*
@@ -80,12 +80,12 @@ Solution 64: 1124424219
 Solution 128: 13830919117339
 */
 
-fn get_instructions_iterator<'a>(input: &'a str) -> impl Iterator<Item = usize> + 'a {
+fn get_instructions_iterator(input: &str) -> impl Iterator<Item = usize> + '_ {
     let iter = input.trim().chars().map(|ch| if ch == 'R' {1} else {0});
     iter
 }
 
-fn get_nodes_map<'a>(lines: Lines<'_>) -> HashMap<&str, (&str, &str)> {
+fn get_nodes_map(lines: Lines<'_>) -> HashMap<&str, (&str, &str)> {
     let mut nodes = HashMap::new();
     for line in lines {
         let mut kvs = line.split(" = ");

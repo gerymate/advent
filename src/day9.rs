@@ -50,7 +50,7 @@ fn all_same<'a>(mut series: impl Iterator<Item = &'a i128>) -> bool {
 
 fn solve(input: &str) -> i128 {
     input.lines().map(
-        |line| Sequence::build(line)
+        Sequence::build
     ).map(
         |mut s| {let (_, l) = s.predict(); l}
     ).sum()
@@ -58,7 +58,7 @@ fn solve(input: &str) -> i128 {
 
 fn solve2(input: &str) -> i128 {
     input.lines().map(
-        |line| Sequence::build(line)
+        Sequence::build
     ).map(
         |mut s| {let (f, _) = s.predict(); f}
     ).sum()

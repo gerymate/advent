@@ -23,9 +23,7 @@ struct SpaceImage {
     expanse_factor: usize,
 }
 
-struct Galaxies {
-    coords: Vec<Point>,
-}
+struct Galaxies(Vec<Point>);
 
 impl Galaxies {
     fn build(space_image: &SpaceImage) -> Galaxies {
@@ -45,7 +43,7 @@ impl Galaxies {
                 }
             }
         }
-        Galaxies{coords}
+        Galaxies(coords)
     }
     fn shortest_path(p1: &Point, p2: &Point) -> usize {
         if p2.x > p1.x {
@@ -84,7 +82,7 @@ impl SpaceImage {
         empty_columns
     }
 
-    fn get_empty_rows(image: &Vec<Vec<bool>>) -> Vec<usize> {
+    fn get_empty_rows(image: &[Vec<bool>]) -> Vec<usize> {
         image.iter().enumerate().filter(|(_i, row)| row.iter().all(|val| !val)).map(|(i, _)| i).collect()
     }
 }
@@ -93,9 +91,9 @@ fn solve(input: &str, expanse_factor: usize) -> i128 {
     let space_image = SpaceImage::build(input, expanse_factor);
     let gxs = Galaxies::build(&space_image);
     let mut s = 0usize;
-    for i in 0..gxs.coords.len()-1 {
-        for j in i+1..gxs.coords.len() {
-            s += Galaxies::shortest_path(&gxs.coords[i], &gxs.coords[j]);
+    for i in 0..gxs.0.len()-1 {
+        for j in i+1..gxs.0.len() {
+            s += Galaxies::shortest_path(&gxs.0[i], &gxs.0[j]);
         }
     }
     s as i128

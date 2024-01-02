@@ -9,7 +9,7 @@ pub fn solve_day_7() -> i32 {
 struct Hands<'a> (Vec<Hand<'a>>);
 
 impl Hands<'_> {
-    fn build<'a>(input: &'a str, has_joker: bool) -> Hands<'_>{
+    fn build(input: &str, has_joker: bool) -> Hands<'_>{
         let mut hands = Vec::new();
         input.lines().for_each(|line| hands.push(Hand::build(line, has_joker)));
         Hands(hands)
@@ -78,7 +78,7 @@ impl Hand<'_> {
 }
 
 fn hand_type2(setup: &Cards) -> u8 {
-    let ht1 = hand_type1(&setup);
+    let ht1 = hand_type1(setup);
     let jokers = *setup.get(&'J').unwrap();
     if ht1 == 6 || jokers == 4 {
         return 6;
@@ -88,19 +88,19 @@ fn hand_type2(setup: &Cards) -> u8 {
     }
     // 1, 2, or 3 jokers:
     if jokers == 1 {
-        return match ht1 {
+        match ht1 {
             0 => 1,
             5 => 6,
             _ => ht1 + 2,
         }
     } else if jokers == 2 {
-        return match ht1 {
+        match ht1 {
             1 => 3,
             2 => 5,
             _ => 6,
         }
     } else { // jokers == 3
-        return match ht1 {
+        match ht1 {
             3 => 5,
             _ => 6,
        }

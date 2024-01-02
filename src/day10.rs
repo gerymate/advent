@@ -39,7 +39,7 @@ impl Debug for PipeLand {
             for column in row {
                 write!(f, "{:?}", column)?
             }
-            writeln!(f, "")?
+            writeln!(f)?
         }
         Ok(())
     }

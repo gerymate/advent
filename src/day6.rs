@@ -58,15 +58,15 @@ fn solve(input: &str) -> i64 {
 
     races.iter().map(|r| r.record_passers())
         .inspect(|c| println!("c: {}", c))
-        .fold(1, |a, b| a * b)
+        .product()
 }
 
 fn solve2(input: &str) -> i64 {
     let mut lines = input.lines();
-    let time = lines.next().unwrap().trim().split_whitespace().skip(1)
+    let time = lines.next().unwrap().split_whitespace().skip(1)
         .fold("".to_owned(), |a, f| a.to_owned() + f)
         .parse::<i64>().unwrap();
-    let distance = lines.next().unwrap().trim().split_whitespace().skip(1)
+    let distance = lines.next().unwrap().split_whitespace().skip(1)
         .fold("".to_owned(), |a, f| a.to_owned() + f)
         .parse::<i64>().unwrap();
     let race = Race::new((time, distance));

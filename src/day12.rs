@@ -1,4 +1,8 @@
-use std::{fs::read_to_string, fmt::{Formatter, self, Display}};
+use std::{
+    collections::HashMap,
+    fmt::{self, Display, Formatter},
+    fs::read_to_string,
+};
 
 pub fn solve_day() -> i128 {
     let input = read_to_string("../input12.txt").unwrap();
@@ -6,11 +10,9 @@ pub fn solve_day() -> i128 {
 }
 
 struct ConditionRecord {
-    base: Vec<bool>,
-    mask: Vec<bool>,
-    x: Vec<bool>,
-    damages: Vec<usize>,
-    questions: usize,
+    record: Vec<u8>,
+    crc: Vec<u8>,
+    cache: HashMap<(usize, usize), usize>,
 }
 
 impl ConditionRecord {
@@ -22,109 +24,113 @@ impl ConditionRecord {
             fst = &unfolded_pattern;
             snd = &unfolded_crc;
         }
-        let base: Vec<bool> = fst.chars().map(|ch| ch == '#').collect();
-        let mask: Vec<bool> = fst.chars().map(|ch| ch == '?').collect();
-        let questions = mask.iter().filter(|&p| *p).count();
-        let x = vec![false; questions];
-        let damages: Vec<usize> = snd.split(',').filter_map(|s| s.parse().ok()).collect();
-        ConditionRecord {
-            base,
-            mask,
-            x,
-            damages,
-            questions,
-        }
+        let record = fst
+            .chars()
+            .map(|ch| match ch {
+                '.' => 0,
+                '#' => 1,
+                _ => 2,
+            })
+            .collect();
+        let crc = snd
+            .split(',')
+            .map(|s| s.parse().unwrap())
+            .map(|n| "#".repeat(n))
+            .collect::<Vec<_>>()
+            .join(".")
+            .chars()
+            .map(|ch| match ch {
+                '.' => 0,
+                '#' => 1,
+                _ => 2,
+            })
+            .collect();
+        let cache = HashMap::new();
+        ConditionRecord { record, crc, cache }
     }
 
     fn unfold_pattern(pattern: &str) -> String {
-        [pattern;5].join("?")
+        [pattern; 5].join("?")
     }
 
     fn unfold_crc(crc: &str) -> String {
-        [crc;5].join(",")
+        [crc; 5].join(",")
     }
 
-    fn count_valid(&mut self) -> usize {
-        let mut s = 0;
-        for u in 0..2_usize.pow(self.questions as u32) {
-            self.x = vec![false; self.questions];
-            for i in 0..self.x.len() {
-                if u >> i & 1 == 1 {
-                    self.x[i] = true;
+    fn count_valid_continous(&mut self, start_rec: usize, start_crc: usize) -> usize {
+        let spring = self.record.get(start_rec);
+        let crc = self.crc.get(start_crc);
+        if let (Some(spring), Some(crc)) = (spring, crc) {
+            match (*spring, *crc) {
+                (2, 1) => self.count_valid_continous(start_rec + 1, start_crc + 1),
+                (1, 1) => self.count_valid_continous(start_rec + 1, start_crc + 1),
+                (0, 1) => 0,
+                (0, 0) => self.count_valid(start_rec + 1, start_crc + 1),
+                (2, 0) => self.count_valid(start_rec + 1, start_crc + 1),
+                (1, 0) => 0,
+                _ => panic!("This cannot happen"),
+            }
+        } else {
+            self.count_valid(start_rec, start_crc)
+        }
+    }
+
+    fn count_valid(&mut self, start_rec: usize, start_crc: usize) -> usize {
+        // In cache?
+        if let Some(variants) = self.cache.get(&(start_rec, start_crc)) {
+            //eprint!("{} {} ", start_rec, start_crc);
+
+            //eprintln!(" => {}", *variants);
+            return *variants;
+        }
+
+        // Not in cache?
+        let variants =
+            // when there should be no more springs
+            if start_crc == self.crc.len() {
+                if start_rec == self.record.len() {
+                    1
+                } else if self.record[start_rec] == 1 {
+                    0
+                } else {
+                    self.count_valid(start_rec + 1, start_crc)
                 }
-            }
-            let valid = self.is_valid();
-            // eprintln!("{}: {} valid: {}", u, self, valid);
-            if valid {
-                s += 1;
-            }
-        }
-        s
-    }
+            } else if start_rec < self.record.len() {
+                match (&self.record[start_rec], &self.crc[start_crc]) {
+                    (1, 1) => self.count_valid_continous(start_rec + 1, start_crc + 1),
+                    (0, 0) => self.count_valid(start_rec + 1, start_crc + 1),
+                    (0, 1) => self.count_valid(start_rec + 1, start_crc),
+                    (1, 0) => 0,
+                    (2, 0) => self.count_valid(start_rec + 1, start_crc + 1),
+                    (2, 1) => {
+                        self.count_valid_continous(start_rec + 1, start_crc + 1)
+                        + self.count_valid(start_rec + 1, start_crc)
+                    }
+                    _ => 0,
+                }
+            } else {
+                0
+            };
 
-    fn compile(&self) -> Vec<bool> {
-        let mut out = self.base.clone();
-        let mut j = 0;
-        for (i, &m) in self.mask.iter().enumerate() {
-            if m {
-                out[i] = self.x[j];
-                j += 1;
-            }
-        }
-        out
+        self.cache.insert((start_rec, start_crc), variants);
+        // eprint!("{} {} ", start_rec, start_crc);
+        // edbg(&self.record[start_rec..]);
+        // eprint!(" ");
+        // edbg(&self.crc[start_crc..]);
+        // eprintln!(" => {}", variants);
+        variants
     }
+}
 
-    fn is_valid(&self) -> bool {
-        let candidate = self.compile();
-        let mut i = 0;
-        for damage_length in &self.damages {
-            while i < candidate.len() && !candidate[i] {
-                i += 1;
-            }
-            let mut j = 0;
-            while i < candidate.len() && candidate[i] {
-                i += 1;
-                j += 1;
-            }
-            if j != *damage_length {
-                return false;
-            }
-        }
-        while i < candidate.len() {
-            if candidate[i] {
-                return false;
-            }
-            i += 1;
-        }
-        true
-    }
+fn edbg(data: &[u8]) {
+    data.iter().for_each(|d| eprint!("{}", d))
 }
 
 impl Display for ConditionRecord {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let mut s = String::new();
-        let mut j = 0;
-        for i in 0..self.base.len() {
-            if self.mask[i] {
-                if self.x[j] {
-                    s.push('X');
-                } else {
-                    s.push('o');
-                }
-                j += 1;
-            } else {
-                if self.base[i] {
-                    s.push('#');
-                } else {
-                    s.push('.');
-                }
-            }
-        }
-        s.push(' ');
-        for &d in &self.damages {
-            s.push_str(&format!("{},", d));
-        }
-        write!(f, "{} ?s: {} 2^q: {}", s, self.questions, 2_usize.pow(self.questions as u32))
+        let record: String = self.record.iter().map(|cond| cond.to_string()).collect();
+        let crc: String = self.crc.iter().map(|cond| cond.to_string()).collect();
+        write!(f, "{:?}  |  {:?}", record, crc)
     }
 }
 
@@ -133,7 +139,8 @@ fn solve(input: &str, unfold: bool) -> i128 {
     for line in input.lines() {
         let mut cr = ConditionRecord::build(line, unfold);
         eprintln!("{}", cr);
-        let n = cr.count_valid();
+        let n = cr.count_valid(0, 0);
+        eprintln!("result: {}", n);
         s += n;
     }
     s as i128
@@ -156,13 +163,12 @@ mod tests {
     }
 
     fn get_test_input() -> &'static str {
-        let test_input = "\
+        "\
 ???.### 1,1,3
 .??..??...?##. 1,1,3
 ?#?#?#?#?#?#?#? 1,3,1,6
 ????.#...#... 4,1,1
 ????.######..#####. 1,6,5
-?###???????? 3,2,1";
-        test_input
+?###???????? 3,2,1"
     }
 }

@@ -2,7 +2,7 @@ use std::fs::read_to_string;
 
 pub fn solve_day() -> i128 {
     let input = read_to_string("../input13.txt").unwrap();
-    solve(&input)
+    solve2(&input)
 }
 
 struct Land {
@@ -12,6 +12,7 @@ struct Land {
 }
 
 impl Land {
+    const SKIPVALUE: i128 = -1_000_000;
     fn build(input: &str) -> Land {
         Land {
             width: input.lines().next().unwrap().len(),
@@ -22,7 +23,7 @@ impl Land {
                 .collect(),
         }
     }
-    fn get_mirror_val(&self) -> i128 {
+    fn get_mirror_val(&self, skipif: i128) -> i128 {
         // vertical mirror |
         'xlabel: for x in 0..self.width - 1 {
             // eprintln!("self.width: {} / 2 = {}", self.width, self.width / 2);
@@ -39,7 +40,10 @@ impl Land {
                     }
                 }
             }
-            return x as i128 + 1;
+            let result = x as i128 + 1;
+            if result != skipif {
+                return result;
+            };
         }
         //
         // horizontal mirror |
@@ -58,21 +62,61 @@ impl Land {
                     }
                 }
             }
-            return 100 * (y as i128 + 1);
+            let result = 100 * (y as i128 + 1);
+            if result != skipif {
+                return result;
+            };
         }
-        panic!("This should not happen!");
+        Land::SKIPVALUE
     }
 }
 
 fn solve(input: &str) -> i128 {
     input
         .split("\n\n")
-        .map(|block| Land::build(block).get_mirror_val())
+        .inspect(|s| eprintln!("Number of blocks: {}", s.len()))
+        .map(|block| {
+            let land = Land::build(block);
+            eprintln!(
+                "Block width: {} height: {} size: {}",
+                land.width,
+                land.height,
+                land.width * land.height
+            );
+            land.get_mirror_val(Land::SKIPVALUE)
+        })
         .sum()
 }
 
-fn solve2(_input: &str) -> i128 {
-    0
+fn solve2(input: &str) -> i128 {
+    input
+        .split("\n\n")
+        .inspect(|s| eprintln!("Number of blocks: {}", s.len()))
+        .map(|block| {
+            let mut land = Land::build(block);
+            eprintln!(
+                "Block width: {} height: {} size: {}",
+                land.width,
+                land.height,
+                land.width * land.height
+            );
+            let orig_result = land.get_mirror_val(Land::SKIPVALUE);
+            eprintln!("orig result: {}", orig_result);
+            let mut result = -2_000_000;
+            'done: for x in 0..land.width {
+                for y in 0..land.height {
+                    land.pattern[y][x] = !land.pattern[y][x];
+                    result = land.get_mirror_val(orig_result);
+                    if result != Land::SKIPVALUE {
+                        eprintln!("Result: {}", result);
+                        break 'done;
+                    }
+                    land.pattern[y][x] = !land.pattern[y][x];
+                }
+            }
+            result
+        })
+        .sum()
 }
 
 #[cfg(test)]
@@ -89,7 +133,7 @@ mod tests {
     #[test]
     fn test_solve2() {
         let test_input = get_test_input();
-        assert_eq!(solve2(test_input), 200);
+        assert_eq!(solve2(test_input), 400);
     }
 
     fn get_test_input() -> &'static str {
